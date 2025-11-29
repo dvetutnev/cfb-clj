@@ -1,3 +1,4 @@
+
 (ns cfb.serializer
   (:require [clojure.math :as math]
             [clojure.string :as string]
@@ -7,10 +8,6 @@
 (def SectorSize 512)
 (def DirectoryEntrySize 128)
 (def directory-entry-peer-sector (/ SectorSize DirectoryEntrySize))
-
-(def strm1 (byte-array (+ 1 (* 8 SectorSize)) (byte \A)))
-(def strm2 (byte-array (* 8 SectorSize) (byte \B)))
-(def strm3 (byte-array (* 128 SectorSize) (byte \C)))
 
 (def ENDOFCHAIN 0xFFFFFFFE)
 (def FREESEC 0xFFFFFFFF)
@@ -208,3 +205,14 @@
             (let [path* (make-nodes-path path size start)]
               (add-nodes-path directory path*)))
           [(map->Node {:name "Root Entry" :type RootStorageObject})] items))
+
+(def strm1 (byte-array (+ 1 (* 8 SectorSize)) (byte \A)))
+(def strm2 (byte-array (* 8 SectorSize) (byte \B)))
+(def strm3 (byte-array (* 128 SectorSize) (byte \C)))
+
+(defn test-cfb []
+  (make-cfb [["a/b" strm1]
+             ["a/h" strm2]
+             ["c/a" strm2]
+             ["c/d" strm1]
+             ["e/f" strm3]]))
