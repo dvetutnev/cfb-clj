@@ -159,3 +159,16 @@
     (assoc header
            :fat fat
            :directory directory)))
+
+(defn locate-start-sector [fat start offset]
+  0)
+
+(defprotocol CFBProtocol
+  (open-stream [this path]))
+
+(deftype CFB [a b c]
+  CFBProtocol
+  (open-stream [this path] 45))
+
+(defprotocol CFBStreamProtocol
+  (read-stream [this]))
