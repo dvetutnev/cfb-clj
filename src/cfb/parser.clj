@@ -161,7 +161,12 @@
            :directory directory)))
 
 (defn locate-start-sector [fat start offset]
-  0)
+  (loop [start start
+         offset offset]
+    (if (>= offset SectorSize)
+      (recur (nth fat start)
+             (- offset SectorSize))
+      start)))
 
 (defprotocol CFBProtocol
   (open-stream [this path]))

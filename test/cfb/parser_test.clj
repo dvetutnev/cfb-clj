@@ -7,7 +7,15 @@
   (is (= (* SectorSize 3) (sector->offset 2))))
 
 (deftest test-locate-start-sector
-  (let [fat [1 2 3 ENDOFCHAIN]]
-    (let [start 0
-          offset 0]
-      (is (= 0 (locate-start-sector fat start offset))))))
+  (testing "Flat FAT"
+    (let [fat [1 2 3 ENDOFCHAIN]]
+      (let [start 0 offset 0]
+        (is (= 0 (locate-start-sector fat start offset))))
+      (let [start 0 offset SectorSize]
+        (is (= 1 (locate-start-sector fat start offset))))
+      (let [start 0 offset (+ 1 SectorSize)]
+        (is (= 1 (locate-start-sector fat start offset))))))
+  (testing "Chop FAT"
+    (let [fat [2 ENDOFCHAIN 4 ENDOFCHAIN ENDOFCHAIN]
+          start 0 offset (* 2 SectorSize)]
+      (is (= 4 (locate-start-sector fat start offset))))))
