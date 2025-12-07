@@ -160,7 +160,7 @@
            :fat fat
            :directory directory)))
 
-(defn locate-start-sector [fat start offset]
+(defn locate-first-sector [fat start offset]
   (loop [start start
          offset offset]
     (if (>= offset SectorSize)
