@@ -1,7 +1,8 @@
 (ns cfb.parser
   (:import (java.nio.file Paths StandardOpenOption OpenOption)
            (java.nio.channels FileChannel)
-           (java.nio ByteBuffer ByteOrder)))
+           (java.nio ByteBuffer ByteOrder))
+  (:require [clojure.string :as string]))
 
 (def SectorSize 512)
 (def HeaderSize 512)
