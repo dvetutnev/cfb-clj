@@ -150,6 +150,13 @@
               (parse-directory-stream directory-stream (:left obj))
               (parse-directory-stream directory-stream (:right obj)))))))
 
+(defprotocol CFBProtocol
+  (open-stream [this path]))
+
+(deftype CFB [fstream header fat directory]
+  CFBProtocol
+  (open-stream [this path] 45))
+
 (defn open-cfb [^String path]
   (let [p (Paths/get path (into-array String []))
         f (FileChannel/open p (into-array OpenOption [StandardOpenOption/READ]))
@@ -169,12 +176,6 @@
              (- offset SectorSize))
       start)))
 
-(defprotocol CFBProtocol
-  (open-stream [this path]))
-
-(deftype CFB [a b c]
-  CFBProtocol
-  (open-stream [this path] 45))
 
 (defprotocol CFBStreamProtocol
   (read-stream [this]))
