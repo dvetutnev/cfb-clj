@@ -150,12 +150,15 @@
               (parse-directory-stream directory-stream (:left obj))
               (parse-directory-stream directory-stream (:right obj)))))))
 
+
 (defprotocol CFBProtocol
   (open-stream [this path]))
 
 (deftype CFB [fstream header fat directory]
   CFBProtocol
-  (open-stream [this path] 45))
+  (open-stream [this path]
+    (let [p (string/split (str "Root Entry/" path) #"/")]
+      (get-in directory p)))) 
 
 (defn open-cfb [^String path]
   (let [p (Paths/get path (into-array String []))
@@ -164,9 +167,11 @@
         fat (read-fat f (:difat header))
         directory-stream (read-directory-stream! f fat (:start-directory-sector header))
         directory (parse-directory-stream directory-stream)]
-    (assoc header
-           :fat fat
-           :directory directory)))
+    (CFB. f header fat directory)))
+
+(defprotocol CFBStreamProtocol
+  (read-stream [this]))
+
 
 (defn locate-first-sector [fat start offset]
   (loop [start start
@@ -175,7 +180,3 @@
       (recur (nth fat start)
              (- offset SectorSize))
       start)))
-
-
-(defprotocol CFBStreamProtocol
-  (read-stream [this]))
