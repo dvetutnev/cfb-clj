@@ -179,3 +179,12 @@
       (recur (nth fat start)
              (- offset SectorSize))
       start)))
+
+(defn demo-copy-buffer []
+  (let [src (byte-array [1 2 3 4])
+        buffer (ByteBuffer/allocate 4)
+        dst (byte-array 6 (byte 0))]
+    (.put buffer src)
+    (.rewind buffer)
+    (.get buffer dst 2 4)
+    dst))
