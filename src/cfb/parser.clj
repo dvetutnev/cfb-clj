@@ -126,13 +126,13 @@
         (conj! entries entry)))
     (persistent! entries)))
 
-(defn read-directory-stream! [^FileChannel f fat start]
+(defn read-directory-stream! [^FileChannel file fat start]
   (let [entries (transient [])]
     (loop [sector start]
       (if (= sector ENDOFCHAIN)
         (persistent! entries)
         (do
-          (doseq [entry (read-directory-sector! f sector)]
+          (doseq [entry (read-directory-sector! file sector)]
             (conj! entries entry))
           (recur (nth fat sector)))))))
 
@@ -162,12 +162,12 @@
 
 (defn open-cfb [^String path]
   (let [p (Paths/get path (into-array String []))
-        f (FileChannel/open p (into-array OpenOption [StandardOpenOption/READ]))
-        header (read-header! f)
-        fat (read-fat f (:difat header))
-        directory-stream (read-directory-stream! f fat (:start-directory-sector header))
+        file (FileChannel/open p (into-array OpenOption [StandardOpenOption/READ]))
+        header (read-header! file)
+        fat (read-fat file (:difat header))
+        directory-stream (read-directory-stream! file fat (:start-directory-sector header))
         directory (parse-directory-stream directory-stream)]
-    (CFB. f header fat directory)))
+    (CFB. file header fat directory)))
 
 (defprotocol CFBStreamProtocol
   (read-stream [this]))
