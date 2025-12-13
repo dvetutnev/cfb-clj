@@ -150,15 +150,49 @@
               (parse-directory-stream directory-stream (:left obj))
               (parse-directory-stream directory-stream (:right obj)))))))
 
+(defn locate-first-sector [fat start offset]
+  (loop [start start
+         offset offset]
+    (if (>= offset SectorSize)
+      (recur (nth fat start)
+             (- offset SectorSize))
+      start)))
+
+(defprotocol CFBStreamProtocol
+  (read-stream [this] [this length] [this offset length]))
+
+(deftype CFBStream [file fat start stream-size]
+  CFBStreamProtocol
+  (read-stream [this] (read-stream this 0 stream-size))
+  (read-stream [this length] (read-stream this 0 length))
+  (read-stream [this offset length]
+    (let [result-buffer (byte-array length (byte 0))]
+      (loop [result-buffer-pos 0
+             remaing length
+             sector (locate-first-sector fat start offset)
+             offset (mod offset SectorSize)]
+        (when (> remaing 0)
+          (let [read-length (- (min remaing SectorSize) offset)
+                fbuf (ByteBuffer/allocate read-length)]
+            (.position file (+ (sector->offset sector) offset))
+            (.read file fbuf)
+            (.rewind fbuf)
+            (.get fbuf result-buffer result-buffer-pos read-length)
+            (recur (+ result-buffer-pos read-length)
+                   (- remaing read-length)
+                   (nth fat sector)
+                   0))))
+      result-buffer)))
+
 (defprotocol CFBProtocol
   (open-stream [this path]))
 
-(deftype CFB [fstream header fat directory]
+(deftype CFB [file header fat directory]
   CFBProtocol
   (open-stream [this path]
     (let [p (string/split (str "Root Entry/" path) #"/")
           {:keys [start size]} (get-in directory p)]
-      {:start start :size size})))
+      (CFBStream. file fat start size))))
 
 (defn open-cfb [^String path]
   (let [p (Paths/get path (into-array String []))
@@ -168,23 +202,3 @@
         directory-stream (read-directory-stream! file fat (:start-directory-sector header))
         directory (parse-directory-stream directory-stream)]
     (CFB. file header fat directory)))
-
-(defprotocol CFBStreamProtocol
-  (read-stream [this]))
-
-(defn locate-first-sector [fat start offset]
-  (loop [start start
-         offset offset]
-    (if (>= offset SectorSize)
-      (recur (nth fat start)
-             (- offset SectorSize))
-      start)))
-
-(defn demo-copy-buffer []
-  (let [src (byte-array [1 2 3 4])
-        buffer (ByteBuffer/allocate 4)
-        dst (byte-array 6 (byte 0))]
-    (.put buffer src)
-    (.rewind buffer)
-    (.get buffer dst 2 4)
-    dst))
