@@ -1,6 +1,7 @@
 (ns cfb.serializer-test
   (:require [clojure.test :refer :all]
-            [cfb.serializer :refer :all]))
+            [cfb.serializer :refer :all]
+            [cfb.constants :refer :all]))
 
 (deftest test-make-directory
   (let [expected [(map->Node {:name "Root Entry" :type RootStorageObject :child 1})

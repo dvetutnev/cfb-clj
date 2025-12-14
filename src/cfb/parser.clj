@@ -2,15 +2,8 @@
   (:import (java.nio.file Paths StandardOpenOption OpenOption)
            (java.nio.channels FileChannel)
            (java.nio ByteBuffer ByteOrder))
-  (:require [clojure.string :as string]))
-
-(def SectorSize 512)
-(def HeaderSize 512)
-(def u32size 4)
-(def DirectoryEntrySize 128)
-
-(def ENDOFCHAIN 0xFFFFFFFE)
-(def NOSTREAM 0xFFFFFFFF)
+  (:require [cfb.constants :refer :all]
+            [clojure.string :as string]))
 
 (defn read-u8! [^ByteBuffer buffer]
   (-> buffer
@@ -107,7 +100,7 @@
         entries (transient [])]
     (.order buffer ByteOrder/LITTLE_ENDIAN)
     (.position f (sector->offset sector))
-    (doseq [_ (range (/ SectorSize DirectoryEntrySize))]
+    (doseq [_ (range DirectoryEntryPeerSector)]
       (.clear buffer)
       (.read f buffer)
       (.rewind buffer)

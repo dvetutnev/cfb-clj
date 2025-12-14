@@ -1,16 +1,9 @@
 (ns cfb.serializer
   (:require [clojure.math :as math]
             [clojure.string :as string]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [cfb.constants :refer :all])
   (:import (java.nio ByteBuffer ByteOrder)))
-
-(def SectorSize 512)
-(def DirectoryEntrySize 128)
-(def directory-entry-peer-sector (/ SectorSize DirectoryEntrySize))
-
-(def ENDOFCHAIN 0xFFFFFFFE)
-(def FREESEC 0xFFFFFFFF)
-(def FATSEC 0xFFFFFFFD)
 
 (defn calc-num-sector
   ([length] (calc-num-sector length 1))
@@ -34,7 +27,6 @@
               [starts fat]))
           [[] []] sizes))
 
-(def u32size 4)
 (def fat-entry-peer-sector (/ SectorSize u32size))
 
 (defn make-fat [proto-fat]
@@ -83,10 +75,6 @@
     (.array buffer)))
 
 (defrecord Node [name child left right type size start])
-
-(def StorageObject (byte 0x01))
-(def StreamObject (byte 0x02))
-(def RootStorageObject (byte 0x05))
 
 (defn nil->default [default value]
   (if (nil? value) default value))
@@ -154,7 +142,7 @@
         (.write out (byte-array (calc-padding (count content)) (byte 0))))
       (doseq [entry directory]
         (.write out (serialize-directory-entry entry)))
-      (doseq [_ (range (calc-padding (count directory) directory-entry-peer-sector))]
+      (doseq [_ (range (calc-padding (count directory) DirectoryEntryPeerSector))]
         (.write out (serialize-directory-entry (map->Node {:name "" :type (byte 0x00)}))))
       (doseq [_ (range num-pad-sector)]
         (.write out (byte-array SectorSize (byte 0))))
