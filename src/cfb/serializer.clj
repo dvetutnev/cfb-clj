@@ -1,4 +1,3 @@
-
 (ns cfb.serializer
   (:require [clojure.math :as math]
             [clojure.string :as string]
