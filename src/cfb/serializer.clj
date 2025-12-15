@@ -122,7 +122,7 @@
 
 (declare make-directory)
 
-(defn make-cfb [streams]
+(defn make-cfb [output-path streams]
   (let [[starts strm-proto-fat] (make-proto-fat (map (comp count last) streams))
         directory (make-directory (map (fn [[path stream] start]
                                          [path (count stream) start]) streams starts))
@@ -135,7 +135,7 @@
         header {:num-fat-sector num-fat-sector
                 :start-directory start-directory
                 :difat difat}]
-    (with-open [out (io/output-stream "test.bin")]
+    (with-open [out (io/output-stream output-path)]
       (.write out (serialize-header header))
       (doseq [[_ content] streams]
         (.write out content)
@@ -198,8 +198,8 @@
 (def strm3 (byte-array (* 128 SectorSize) (byte \C)))
 
 (defn test-cfb []
-  (make-cfb [["a/b" strm1]
-             ["a/h" strm2]
-             ["c/a" strm2]
-             ["c/d" strm1]
-             ["e/f" strm3]]))
+  (make-cfb "test.bin" [["a/b" strm1]
+                        ["a/h" strm2]
+                        ["c/a" strm2]
+                        ["c/d" strm1]
+                        ["e/f" strm3]]))
