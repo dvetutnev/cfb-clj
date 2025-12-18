@@ -31,3 +31,27 @@
                                   (byte-array (/ SectorSize 2) (byte \B))
                                   (byte-array SectorSize (byte \C))))]
         (is (java.util.Arrays/equals result expected))))))
+
+(deftest test-directory
+  (let [strm1 (byte-array 10 (byte 10))
+        strm2 (byte-array 20 (byte 20))
+        strm3 (byte-array 30 (byte 30))
+        _ (make-cfb "test.cfb" [["a/b" strm1]
+                                ["a/a" strm2]
+                                ["a/c" strm3]])
+        cfb (open-cfb "test.cfb")]
+
+    (testing "a/b"
+      (let [stream (open-stream cfb "a/b")
+            result (read-stream stream)]
+        (is (java.util.Arrays/equals result strm1))))
+
+    (testing "a/a"
+      (let [stream (open-stream cfb "a/a")
+            result (read-stream stream)]
+        (is (java.util.Arrays/equals result strm2))))
+
+    (testing "a/c"
+      (let [stream (open-stream cfb "a/c")
+            result (read-stream stream)]
+        (is (java.util.Arrays/equals result strm3))))))
