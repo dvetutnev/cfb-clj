@@ -34,8 +34,9 @@
     (if (> (+ num-fat-sector (count proto-fat))
            (* num-fat-sector fat-entry-peer-sector))
       (recur (inc num-fat-sector))
-      (let [num-pad-entry (- (* num-fat-sector fat-entry-peer-sector)
-                             (+ num-fat-sector (count proto-fat)))
+      (let [num-total-fat-entry (* num-fat-sector fat-entry-peer-sector)
+            num-used-fat-entry (+ num-fat-sector (count proto-fat))
+            num-pad-entry (- num-total-fat-entry num-used-fat-entry)
             start (+ (count proto-fat) num-pad-entry)]
         [(concat proto-fat
                  (long-array num-pad-entry FREESEC)
