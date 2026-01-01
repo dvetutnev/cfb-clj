@@ -67,3 +67,8 @@
     (is (= 1 (calc-padding 3 4)))
     (is (= 0 (calc-padding 8 4)))
     (is (= 2 (calc-padding 6 4)))))
+
+(deftest test-calc-num-difat-sector
+  (is (= 0 (calc-num-difat-sector 109)))
+  (is (= 1 (calc-num-difat-sector (+ 109 127))))
+  (is (= 2 (calc-num-difat-sector (+ 109 127 42)))))

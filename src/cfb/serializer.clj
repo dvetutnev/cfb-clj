@@ -27,6 +27,14 @@
               [starts fat]))
           [[] []] sizes))
 
+(defn calc-num-difat-sector [num-fat-sector]
+  (if (<= num-fat-sector 109)
+    0
+    (let [num-full-sector (math/floor-div (- num-fat-sector 109) 127)]
+      (if (= 0 (mod (- num-fat-sector 109) 127))
+        num-full-sector
+        (inc num-full-sector)))))
+
 (def fat-entry-peer-sector (/ SectorSize u32size))
 
 (defn make-fat [proto-fat]
