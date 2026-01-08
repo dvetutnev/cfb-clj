@@ -27,11 +27,13 @@
               [starts fat]))
           [[] []] sizes))
 
+(def difat-entry-in-header 109)
+
 (defn calc-num-difat-sector [num-fat-sector]
-  (if (<= num-fat-sector 109)
+  (if (<= num-fat-sector difat-entry-in-header)
     0
-    (let [num-full-sector (math/floor-div (- num-fat-sector 109) 127)]
-      (if (= 0 (mod (- num-fat-sector 109) 127))
+    (let [num-full-sector (math/floor-div (- num-fat-sector difat-entry-in-header) 127)]
+      (if (= 0 (mod (- num-fat-sector difat-entry-in-header) 127))
         num-full-sector
         (inc num-full-sector)))))
 
@@ -46,16 +48,19 @@
             num-used-fat-entry (+ num-fat-sector (count proto-fat))
             num-pad-entry (- num-total-fat-entry num-used-fat-entry)
             start (+ (count proto-fat) num-pad-entry)]
+        (println "count proto-fat: " (count proto-fat))
+        (println "num-fat-sector: " num-fat-sector)
+        (println "num-pad-entry: " num-pad-entry)
+        (println "start (fat): " start)
         [(concat proto-fat
                  (long-array num-pad-entry FREESEC)
                  (long-array num-fat-sector FATSEC))
          start num-fat-sector num-pad-entry]))))
 
-(def num-difat-entry-in-header 109)
 (defn make-difat [start length]
-  {:pre [(<= length num-difat-entry-in-header)]}
+  {:pre [(<= length difat-entry-in-header)]}
   (concat (range start (+ start length))
-          (long-array (- num-difat-entry-in-header length) FREESEC)))
+          (long-array (- difat-entry-in-header length) FREESEC)))
 
 (defn serialize-header [header]
   (let [^ByteBuffer buffer (ByteBuffer/allocate SectorSize)]
