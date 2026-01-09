@@ -140,11 +140,12 @@
         num-difat-sector (calc-num-difat-sector length)]
     (->> (concat arr pad)
          (partition 127)
-         (reduce (fn [[arr difat-sector] part]
+         (reduce (fn [[arr difat-sector remaing-difat-sector] part]
                    (let [next-difat-sector (inc difat-sector)]
                      [(concat arr part [next-difat-sector])
-                      (inc difat-sector)]))
-                 [[] start-difat]))))
+                      (inc difat-sector)
+                      (dec remaing-difat-sector)]))
+                 [[] start-difat num-difat-sector]))))
 
 (declare make-directory)
 
