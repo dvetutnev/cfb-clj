@@ -136,12 +136,14 @@
 
 (defn make-difat-tail [start-fat length start-difat]
   (let [arr (range start-fat (+ start-fat length))
-        pad (long-array (calc-padding length 127) FREESEC)]
+        pad (long-array (calc-padding length 127) FREESEC)
+        num-difat-sector (calc-num-difat-sector length)]
     (->> (concat arr pad)
          (partition 127)
          (reduce (fn [[arr difat-sector] part]
-                   [(concat arr part [(inc difat-sector)])
-                    (inc difat-sector)])
+                   (let [next-difat-sector (inc difat-sector)]
+                     [(concat arr part [next-difat-sector])
+                      (inc difat-sector)]))
                  [[] start-difat]))))
 
 (declare make-directory)
