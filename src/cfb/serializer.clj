@@ -134,6 +134,16 @@
        0
        (- alignment m)))))
 
+(defn make-difat-tail [start-fat length start-difat]
+  (let [arr (range start-fat (+ start-fat length))
+        pad (long-array (calc-padding length 127) FREESEC)]
+    (->> (concat arr pad)
+         (partition 127)
+         (reduce (fn [[arr difat-sector] part]
+                   [(concat arr part [(inc difat-sector)])
+                    (inc difat-sector)])
+                 [[] start-difat]))))
+
 (declare make-directory)
 
 (defn make-cfb [output-path streams]
