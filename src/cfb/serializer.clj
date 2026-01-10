@@ -141,12 +141,13 @@
         [res _ _] (->> (concat arr pad)
                        (partition 127)
                        (reduce (fn [[arr current-difat-sector remaing] part]
-                                 (let [next-difat-sector (if (> remaing 1) (inc current-difat-sector)
-                                                             FREESEC)]
+                                 (let [next-difat-sector (if (zero? remaing)
+                                                           FREESEC
+                                                           (inc current-difat-sector))]
                                    [(concat arr part [next-difat-sector])
                                     (inc current-difat-sector)
                                     (dec remaing)]))
-                               [[] start-difat num-difat-sector]))]
+                               [[] start-difat (dec num-difat-sector)]))]
     res))
 
 (declare make-directory)
