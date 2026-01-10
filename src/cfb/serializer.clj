@@ -140,11 +140,11 @@
         num-difat-sector (calc-num-difat-sector (+ length difat-entry-in-header))
         [res _ _] (->> (concat arr pad)
                        (partition 127)
-                       (reduce (fn [[arr current-difat-sector remaing] part]
+                       (reduce (fn [[res current-difat-sector remaing] part]
                                  (let [next-difat-sector (if (zero? remaing)
                                                            FREESEC
                                                            (inc current-difat-sector))]
-                                   [(concat arr part [next-difat-sector])
+                                   [(concat res part [next-difat-sector])
                                     (inc current-difat-sector)
                                     (dec remaing)]))
                                [[] start-difat (dec num-difat-sector)]))]
