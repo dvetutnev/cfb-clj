@@ -57,11 +57,6 @@
                  (long-array num-fat-sector FATSEC))
          start num-fat-sector num-pad-entry]))))
 
-(defn make-difat-head [start length]
-  {:pre [(<= length difat-entry-in-header)]}
-  (concat (range start (+ start length))
-          (long-array (- difat-entry-in-header length) FREESEC)))
-
 (defn calc-padding
   ([length] (calc-padding length SectorSize))
   ([length alignment]
@@ -69,6 +64,11 @@
      (if (= m 0)
        0
        (- alignment m)))))
+
+(defn make-difat-head [start length]
+  {:pre [(<= length difat-entry-in-header)]}
+  (concat (range start (+ start length))
+          (long-array (- difat-entry-in-header length) FREESEC)))
 
 (defn make-difat-tail [start-fat length start-difat]
   (let [arr (range start-fat (+ start-fat length))
