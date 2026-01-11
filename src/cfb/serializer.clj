@@ -57,7 +57,7 @@
                  (long-array num-fat-sector FATSEC))
          start num-fat-sector num-pad-entry]))))
 
-(defn make-difat [start length]
+(defn make-difat-head [start length]
   {:pre [(<= length difat-entry-in-header)]}
   (concat (range start (+ start length))
           (long-array (- difat-entry-in-header length) FREESEC)))
@@ -161,7 +161,7 @@
         proto-fat (concat strm-proto-fat
                           (make-fat-chain start-directory num-directory-sector))
         [fat start-fat num-fat-sector num-pad-sector] (make-fat proto-fat)
-        difat (make-difat start-fat num-fat-sector)
+        difat (make-difat-head start-fat num-fat-sector)
         header {:num-fat-sector num-fat-sector
                 :start-directory start-directory
                 :difat difat}]
