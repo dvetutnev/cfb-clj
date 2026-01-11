@@ -62,28 +62,52 @@
   (concat (range start (+ start length))
           (long-array (- difat-entry-in-header length) FREESEC)))
 
+(defn calc-padding
+  ([length] (calc-padding length SectorSize))
+  ([length alignment]
+   (let [m (mod length alignment)]
+     (if (= m 0)
+       0
+       (- alignment m)))))
+
+(defn make-difat-tail [start-fat length start-difat]
+  (let [arr (range start-fat (+ start-fat length))
+        pad (long-array (calc-padding length 127) FREESEC)
+        num-difat-sector (calc-num-difat-sector (+ length difat-entry-in-header))
+        [res _ _] (->> (concat arr pad)
+                       (partition 127)
+                       (reduce (fn [[res current-difat-sector remaing] part]
+                                 (let [next-difat-sector (if (zero? remaing)
+                                                           FREESEC
+                                                           (inc current-difat-sector))]
+                                   [(concat res part [next-difat-sector])
+                                    (inc current-difat-sector)
+                                    (dec remaing)]))
+                               [[] start-difat (dec num-difat-sector)]))]
+    res))
+
 (defn serialize-header [header]
   (let [^ByteBuffer buffer (ByteBuffer/allocate SectorSize)]
     (doto buffer
       (.order ByteOrder/LITTLE_ENDIAN)
       (.put (byte-array [0xD0 0xCF 0x11 0xE0 0xA1 0xB1 0x1A 0xE1])) ; Signature
-      (.put (byte-array 16 (byte 0))) ; CLSID
-      (.putShort 0x003E) ; Minor version
-      (.putShort 0x0003) ; Major version
+      (.put (byte-array 16 (byte 0)))      ; CLSID
+      (.putShort 0x003E)                   ; Minor version
+      (.putShort 0x0003)                   ; Major version
       (.putShort (unchecked-short 0xFFFE)) ; Byte order
-      (.putShort 0x0009) ; Sector size
-      (.putShort 0x0006) ; Mini stream sector size
-      (.putShort 0) ; Reserved
-      (.putInt 0)   ; Reserved
-      (.putInt 0)   ; Number of directory sector (not used for version 3)
-      (.putInt (:num-fat-sector header))  ; Number of FAT sector
+      (.putShort 0x0009)                   ; Sector size
+      (.putShort 0x0006)                   ; Mini stream sector size
+      (.putShort 0)                        ; Reserved
+      (.putInt 0)                          ; Reserved
+      (.putInt 0) ; Number of directory sector (not used for version 3)
+      (.putInt (:num-fat-sector header)) ; Number of FAT sector
       (.putInt (:start-directory header)) ; Directory starting sector location
-      (.putInt 0) ; Transaction signature
-      (.putInt 0) ; Mini stream cutoff
+      (.putInt 0)                         ; Transaction signature
+      (.putInt 0)                         ; Mini stream cutoff
       (.putInt (unchecked-int ENDOFCHAIN)) ; Mini FAT start sector location
-      (.putInt 0) ; Number of mini FAT sector
+      (.putInt 0)                          ; Number of mini FAT sector
       (.putInt (unchecked-int ENDOFCHAIN)) ; DIFAT start sector location
-      (.putInt 0)) ; Number of DIFAT sector
+      (.putInt 0))                         ; Number of DIFAT sector
     (doseq [entry (:difat header)]
       (.putInt buffer (unchecked-int entry)))
     (.array buffer)))
@@ -125,30 +149,6 @@
     (doseq [entry fat]
       (.putInt buffer (unchecked-int entry)))
     (.array buffer)))
-
-(defn calc-padding
-  ([length] (calc-padding length SectorSize))
-  ([length alignment]
-   (let [m (mod length alignment)]
-     (if (= m 0)
-       0
-       (- alignment m)))))
-
-(defn make-difat-tail [start-fat length start-difat]
-  (let [arr (range start-fat (+ start-fat length))
-        pad (long-array (calc-padding length 127) FREESEC)
-        num-difat-sector (calc-num-difat-sector (+ length difat-entry-in-header))
-        [res _ _] (->> (concat arr pad)
-                       (partition 127)
-                       (reduce (fn [[res current-difat-sector remaing] part]
-                                 (let [next-difat-sector (if (zero? remaing)
-                                                           FREESEC
-                                                           (inc current-difat-sector))]
-                                   [(concat res part [next-difat-sector])
-                                    (inc current-difat-sector)
-                                    (dec remaing)]))
-                               [[] start-difat (dec num-difat-sector)]))]
-    res))
 
 (declare make-directory)
 
