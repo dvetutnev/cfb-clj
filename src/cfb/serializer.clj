@@ -86,6 +86,14 @@
                                [[] start-difat (dec num-difat-sector)]))]
     res))
 
+(defn make-difat [start-fat length start-difat]
+  (let [head-length (min length difat-entry-in-header)
+        tail-length (if (< length difat-entry-in-header)
+                      0
+                      (- length difat-entry-in-header))]
+    [(make-difat-head start-fat head-length)
+     (make-difat-tail (+ start-fat difat-entry-in-header) tail-length start-difat)]))
+
 (defn serialize-header [header]
   (let [^ByteBuffer buffer (ByteBuffer/allocate SectorSize)]
     (doto buffer
