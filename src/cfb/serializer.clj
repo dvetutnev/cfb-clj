@@ -114,9 +114,9 @@
       (.putInt 0)                         ; Mini stream cutoff
       (.putInt (unchecked-int ENDOFCHAIN)) ; Mini FAT start sector location
       (.putInt 0)                          ; Number of mini FAT sector
-      (.putInt (unchecked-int ENDOFCHAIN)) ; DIFAT start sector location
-      (.putInt 0))                         ; Number of DIFAT sector
-    (doseq [entry (:difat header)]
+      (.putInt (:start-difat-sector header)) ; DIFAT start sector location
+      (.putInt (:num-difat-sector header)))  ; Number of DIFAT sector
+    (doseq [entry (:difat-head header)]
       (.putInt buffer (unchecked-int entry)))
     (.array buffer)))
 
@@ -169,10 +169,12 @@
         proto-fat (concat strm-proto-fat
                           (make-fat-chain start-directory num-directory-sector))
         [fat start-fat num-fat-sector num-pad-sector] (make-fat proto-fat)
-        difat (make-difat-head start-fat num-fat-sector)
+        difat-head (make-difat-head start-fat num-fat-sector)
         header {:num-fat-sector num-fat-sector
                 :start-directory start-directory
-                :difat difat}]
+                :start-difat-sector (unchecked-int ENDOFCHAIN)
+                :num-difat-sector 0
+                :difat-head difat-head}]
     (with-open [out (io/output-stream output-path)]
       (.write out (serialize-header header))
       (doseq [[_ content] streams]
