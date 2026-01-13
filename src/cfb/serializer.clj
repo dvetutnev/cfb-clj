@@ -10,7 +10,7 @@
   ([length entry-size]
    (let [total-size (* length entry-size)
          num-full-sector (math/floor-div total-size SectorSize)]
-     (if (= (mod total-size SectorSize) 0)
+     (if (zero? (mod total-size SectorSize))
        num-full-sector
        (inc num-full-sector)))))
 
@@ -33,7 +33,7 @@
   (if (<= num-fat-sector difat-entry-in-header)
     0
     (let [num-full-sector (math/floor-div (- num-fat-sector difat-entry-in-header) 127)]
-      (if (= 0 (mod (- num-fat-sector difat-entry-in-header) 127))
+      (if (zero? (mod (- num-fat-sector difat-entry-in-header) 127))
         num-full-sector
         (inc num-full-sector)))))
 
@@ -61,7 +61,7 @@
   ([length] (calc-padding length SectorSize))
   ([length alignment]
    (let [m (mod length alignment)]
-     (if (= m 0)
+     (if (zero? m)
        0
        (- alignment m)))))
 
