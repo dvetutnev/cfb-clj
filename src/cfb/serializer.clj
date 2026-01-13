@@ -40,7 +40,7 @@
 (def fat-entry-peer-sector (/ SectorSize u32size))
 
 (defn make-fat [proto-fat]
-  (loop [num-fat-sector (calc-num-sector (* (count proto-fat) u32size))]
+  (loop [num-fat-sector (calc-num-sector (count proto-fat) u32size)]
     (if (> (+ num-fat-sector (count proto-fat))
            (* num-fat-sector fat-entry-peer-sector))
       (recur (inc num-fat-sector))
