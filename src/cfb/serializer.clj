@@ -40,22 +40,30 @@
 (def fat-entry-peer-sector (/ SectorSize u32size))
 
 (defn make-fat [proto-fat]
-  (loop [num-fat-sector (calc-num-sector (count proto-fat) u32size)]
-    (if (> (+ num-fat-sector (count proto-fat))
+  (loop [num-fat-sector (calc-num-sector (count proto-fat) u32size)
+         num-difat-sector (calc-num-difat-sector num-fat-sector)]
+    (if (> (+ num-fat-sector (count proto-fat) num-difat-sector)
            (* num-fat-sector fat-entry-peer-sector))
-      (recur (inc num-fat-sector))
+      (recur (inc num-fat-sector)
+             (calc-num-difat-sector (inc num-fat-sector)))
       (let [num-total-fat-entry (* num-fat-sector fat-entry-peer-sector)
-            num-used-fat-entry (+ num-fat-sector (count proto-fat))
+            num-used-fat-entry (+ num-fat-sector (count proto-fat) num-difat-sector)
             num-pad-entry (- num-total-fat-entry num-used-fat-entry)
-            start (+ (count proto-fat) num-pad-entry)]
+            start (+ (count proto-fat) num-difat-sector num-pad-entry)
+            start-difat (if (zero? num-difat-sector)
+                          ENDOFCHAIN
+                          (count proto-fat))]
         (println "count proto-fat: " (count proto-fat))
         (println "num-fat-sector: " num-fat-sector)
         (println "num-pad-entry: " num-pad-entry)
         (println "start (fat): " start)
+        (println "start (difat): " start-difat)
+        (println "num-difat-sector: " num-difat-sector)
         [(concat proto-fat
+                 (long-array num-difat-sector DIFATSEC)
                  (long-array num-pad-entry FREESEC)
                  (long-array num-fat-sector FATSEC))
-         start num-fat-sector num-pad-entry]))))
+         start num-fat-sector start-difat num-difat-sector num-pad-entry]))))
 
 (defn calc-padding
   ([length] (calc-padding length SectorSize))
@@ -114,7 +122,7 @@
       (.putInt 0)                         ; Mini stream cutoff
       (.putInt (unchecked-int ENDOFCHAIN)) ; Mini FAT start sector location
       (.putInt 0)                          ; Number of mini FAT sector
-      (.putInt (:start-difat-sector header)) ; DIFAT start sector location
+      (.putInt (unchecked-int (:start-difat-sector header))) ; DIFAT start sector location
       (.putInt (:num-difat-sector header)))  ; Number of DIFAT sector
     (doseq [entry (:difat-head header)]
       (.putInt buffer (unchecked-int entry)))
@@ -151,7 +159,7 @@
       (.putLong (unchecked-long (nil->0 (:size entry)))))
     (.array buffer)))
 
-(defn serialize-fat [fat]
+(defn serialize-int-array [fat]
   (let [^ByteBuffer buffer (ByteBuffer/allocate (* (count fat) u32size))]
     (.order buffer ByteOrder/LITTLE_ENDIAN)
     (doseq [entry fat]
@@ -168,12 +176,14 @@
         num-directory-sector (calc-num-sector (count directory) DirectoryEntrySize)
         proto-fat (concat strm-proto-fat
                           (make-fat-chain start-directory num-directory-sector))
-        [fat start-fat num-fat-sector num-pad-sector] (make-fat proto-fat)
-        difat-head (make-difat-head start-fat num-fat-sector)
+        [fat start-fat num-fat-sector
+         start-difat num-difat-sector
+         num-pad-sector] (make-fat proto-fat)
+        [difat-head difat-tail] (make-difat start-fat num-fat-sector start-difat)
         header {:num-fat-sector num-fat-sector
                 :start-directory start-directory
-                :start-difat-sector (unchecked-int ENDOFCHAIN)
-                :num-difat-sector 0
+                :start-difat-sector start-difat
+                :num-difat-sector num-difat-sector
                 :difat-head difat-head}]
     (with-open [out (io/output-stream output-path)]
       (.write out (serialize-header header))
@@ -184,9 +194,10 @@
         (.write out (serialize-directory-entry entry)))
       (doseq [_ (range (calc-padding (count directory) DirectoryEntryPeerSector))]
         (.write out (serialize-directory-entry (map->Node {:name "" :type (byte 0x00)}))))
+      (.write out (serialize-int-array difat-tail))
       (doseq [_ (range num-pad-sector)]
         (.write out (byte-array SectorSize (byte 0))))
-      (.write out (serialize-fat fat)))))
+      (.write out (serialize-int-array fat)))))
 
 (defn add-node [directory parent-id direction node]
   (let [new-id (count directory)
@@ -236,10 +247,12 @@
 (def strm1 (byte-array (+ 1 (* 8 SectorSize)) (byte \A)))
 (def strm2 (byte-array (* 8 SectorSize) (byte \B)))
 (def strm3 (byte-array (* 128 SectorSize) (byte \C)))
+(def strmbig (byte-array (* 109 128 SectorSize) (byte \D)))
 
 (defn test-cfb []
   (make-cfb "test.bin" [["a/b" strm1]
                         ["a/h" strm2]
                         ["c/a" strm2]
                         ["c/d" strm1]
-                        ["e/f" strm3]]))
+                        ["e/f" strm3]
+                        ["big" strmbig]]))
