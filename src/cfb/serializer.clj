@@ -53,12 +53,6 @@
             start-difat (if (zero? num-difat-sector)
                           ENDOFCHAIN
                           (count proto-fat))]
-        (println "count proto-fat: " (count proto-fat))
-        (println "num-fat-sector: " num-fat-sector)
-        (println "num-pad-entry: " num-pad-entry)
-        (println "start (fat): " start)
-        (println "start (difat): " start-difat)
-        (println "num-difat-sector: " num-difat-sector)
         [(concat proto-fat
                  (long-array num-difat-sector DIFATSEC)
                  (long-array num-pad-entry FREESEC)
@@ -177,14 +171,14 @@
         proto-fat (concat strm-proto-fat
                           (make-fat-chain start-directory num-directory-sector))
         [fat start-fat num-fat-sector
-         start-difat num-difat-sector
-         num-pad-sector] (make-fat proto-fat)
+         start-difat num-difat-sector num-pad-sector] (make-fat proto-fat)
         [difat-head difat-tail] (make-difat start-fat num-fat-sector start-difat)
         header {:num-fat-sector num-fat-sector
                 :start-directory start-directory
                 :start-difat-sector start-difat
                 :num-difat-sector num-difat-sector
                 :difat-head difat-head}]
+
     (with-open [out (io/output-stream output-path)]
       (.write out (serialize-header header))
       (doseq [[_ content] streams]
