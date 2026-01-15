@@ -80,7 +80,7 @@
                        (partition 127)
                        (reduce (fn [[res current-difat-sector remaing] part]
                                  (let [next-difat-sector (if (zero? remaing)
-                                                           FREESEC
+                                                           ENDOFCHAIN
                                                            (inc current-difat-sector))]
                                    [(concat res part [next-difat-sector])
                                     (inc current-difat-sector)
