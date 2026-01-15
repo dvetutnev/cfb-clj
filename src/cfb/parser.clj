@@ -65,6 +65,9 @@
 (defn sector->offset [n]
   (* (+ n 1) SectorSize))
 
+(defn read-difat-tail [start-difat]
+  [])
+
 (defn read-fat [^FileChannel f difat]
   (let [buffer (ByteBuffer/allocate SectorSize)
         fat (transient [])]
@@ -191,7 +194,13 @@
   (let [p (Paths/get path (into-array String []))
         file (FileChannel/open p (into-array OpenOption [StandardOpenOption/READ]))
         header (read-header! file)
-        fat (read-fat file (:difat header))
+        difat (concat (:difat header) (read-difat-tail (:start-difat-sector header)))
+        fat (read-fat file difat)
         directory-stream (read-directory-stream! file fat (:start-directory-sector header))
         directory (parse-directory-stream directory-stream)]
     (CFB. file header fat directory)))
+
+(defn dump-header [^String path]
+  (let [p (Paths/get path (into-array String []))
+        file (FileChannel/open p (into-array OpenOption [StandardOpenOption/READ]))]
+    (read-header! file)))
