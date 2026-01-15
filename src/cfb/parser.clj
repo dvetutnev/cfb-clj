@@ -65,11 +65,21 @@
 (defn sector->offset [n]
   (* (+ n 1) SectorSize))
 
-(defn read-difat-tail [start-difat]
-  [])
+(defn read-difat-tail [f difat-sector]
+  (if (= difat-sector ENDOFCHAIN)
+    []
+    (let [^ByteBuffer buffer (ByteBuffer/allocate SectorSize)
+          res (transient [])]
+      (.order buffer ByteOrder/LITTLE_ENDIAN)
+      (.position f (sector->offset difat-sector))
+      (.read f buffer)
+      (.rewind buffer)
+      (doseq [_ (range 127)]
+        (conj! res (read-u32! buffer)))
+      (concat (persistent! res) (read-difat-tail f (read-u32! buffer))))))
 
 (defn read-fat [^FileChannel f difat]
-  (let [buffer (ByteBuffer/allocate SectorSize)
+  (let [^ByteBuffer buffer (ByteBuffer/allocate SectorSize)
         fat (transient [])]
     (.order buffer ByteOrder/LITTLE_ENDIAN)
     (doseq [n difat]
@@ -194,7 +204,7 @@
   (let [p (Paths/get path (into-array String []))
         file (FileChannel/open p (into-array OpenOption [StandardOpenOption/READ]))
         header (read-header! file)
-        difat (concat (:difat header) (read-difat-tail (:start-difat-sector header)))
+        difat (concat (:difat header) (read-difat-tail file (:start-difat-sector header)))
         fat (read-fat file difat)
         directory-stream (read-directory-stream! file fat (:start-directory-sector header))
         directory (parse-directory-stream directory-stream)]
