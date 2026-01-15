@@ -55,3 +55,11 @@
       (let [stream (open-stream cfb "a/c")
             result (read-stream stream)]
         (is (java.util.Arrays/equals result strm3))))))
+
+(deftest test-difat-tail
+  (let [data (byte-array (* (+ 109 127 42) 128 SectorSize) (byte \D))
+        _ (make-cfb "test.cfb" [["stream" data]])
+        cfb (open-cfb "test.cfb")
+        stream (open-stream cfb "stream")
+        result (read-stream stream)]
+    (is (java.util.Arrays/equals result data))))
