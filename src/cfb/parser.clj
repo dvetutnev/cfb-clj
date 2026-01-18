@@ -78,17 +78,21 @@
         (conj! res (read-u32! buffer)))
       (concat (persistent! res) (read-difat-tail f (read-u32! buffer))))))
 
-(defn read-fat [^FileChannel f difat]
+(defn read-fat [^FileChannel f difat num-fat-sector]
   (let [^ByteBuffer buffer (ByteBuffer/allocate SectorSize)
         fat (transient [])]
     (.order buffer ByteOrder/LITTLE_ENDIAN)
-    (doseq [n difat]
-      (.position f (sector->offset n))
-      (.clear buffer)
-      (.read f buffer)
-      (.rewind buffer)
-      (doseq [_ (range (/ SectorSize u32size))]
-        (conj! fat (read-u32! buffer))))
+    (loop [remaing num-fat-sector
+           difat difat]
+      (let [sector (first difat)]
+        (.position f (sector->offset sector))
+        (.clear buffer)
+        (.read f buffer)
+        (.rewind buffer)
+        (doseq [_ (range (/ SectorSize u32size))]
+          (conj! fat (read-u32! buffer)))
+        (if (> remaing 1)
+          (recur (dec remaing) (rest difat)))))
     (persistent! fat)))
 
 (defn read-directory-entry-name! [^ByteBuffer buffer]
@@ -205,7 +209,7 @@
         file (FileChannel/open p (into-array OpenOption [StandardOpenOption/READ]))
         header (read-header! file)
         difat (concat (:difat header) (read-difat-tail file (:start-difat-sector header)))
-        fat (read-fat file difat)
+        fat (read-fat file difat (:num-fat-sector header))
         directory-stream (read-directory-stream! file fat (:start-directory-sector header))
         directory (parse-directory-stream directory-stream)]
     (CFB. file header fat directory)))
