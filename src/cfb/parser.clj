@@ -97,7 +97,6 @@
 
 (defn read-directory-entry-name! [^ByteBuffer buffer]
   (let [name (byte-array 64 (byte 0x00))]
-    (.position buffer 0)
     (.get buffer name)
     (let [len (read-u16! buffer)]
       (if (> len 0)
