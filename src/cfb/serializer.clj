@@ -186,10 +186,10 @@
         (.write out (byte-array (calc-padding (count content)) (byte 0))))
       (doseq [entry directory]
         (.write out (serialize-directory-entry entry)))
-      (doseq [_ (range (calc-padding (count directory) DirectoryEntryPeerSector))]
+      (dotimes [_ (calc-padding (count directory) DirectoryEntryPeerSector)]
         (.write out (serialize-directory-entry (map->Node {:name "" :type (byte 0x00)}))))
       (.write out (serialize-int-array difat-tail))
-      (doseq [_ (range num-pad-sector)]
+      (dotimes [_ num-pad-sector]
         (.write out (byte-array SectorSize (byte 0))))
       (.write out (serialize-int-array fat)))))
 

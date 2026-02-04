@@ -52,7 +52,7 @@
                                   :num-difat-sector (read-u32! buffer)])
 
           difat (let [difat (transient [])]
-                  (doseq [_ (range (min (:num-fat-sector header) 109))]
+                  (dotimes [_ (min (:num-fat-sector header) 109)]
                     (conj! difat (read-u32! buffer)))
                   (persistent! difat))]
 
@@ -74,7 +74,7 @@
       (.position f (sector->offset difat-sector))
       (.read f buffer)
       (.rewind buffer)
-      (doseq [_ (range 127)]
+      (dotimes [_ 127]
         (conj! res (read-u32! buffer)))
       (concat (persistent! res) (read-difat-tail f (read-u32! buffer))))))
 
@@ -89,7 +89,7 @@
         (.clear buffer)
         (.read f buffer)
         (.rewind buffer)
-        (doseq [_ (range (/ SectorSize u32size))]
+        (dotimes [_ (/ SectorSize u32size)]
           (conj! fat (read-u32! buffer)))
         (if (> remaing 1)
           (recur (dec remaing) (rest difat)))))
