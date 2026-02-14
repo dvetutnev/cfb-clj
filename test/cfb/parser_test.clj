@@ -1,6 +1,7 @@
 (ns cfb.parser-test
   (:require [clojure.test :refer :all]
-            [cfb.parser :refer :all]))
+            [cfb.parser :refer :all]
+            [cfb.constants :refer :all]))
 
 (deftest test-sector->offset
   (is (= SectorSize (sector->offset 0)))
